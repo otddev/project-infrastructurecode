@@ -1,5 +1,5 @@
-# Udacity Project: High Availability Deployment via CloudFormation
-Udacity Project: High Availability Deployment via CloudFormation
+# Udacity Project: High Availability Deployment / CloudFormation
+
 mailto:gerardo@onetechdude.com
 
 <div id="top"></div>
