@@ -1,0 +1,375 @@
+Description:
+  Project Infra 2 Code | Author Antonio Garcia
+Parameters:
+  EnvPrefix:
+    Description: An environment name that will be prefixed to resources
+    Type: String
+
+  PubSubnet1CIDR:
+    Description: Provide the subnet for Public Subnet 1
+    Type: String
+    Default: 10.0.0.0/24
+
+  PubSubnet2CIDR:
+    Description: Provide the subnet for Public Subnet 2
+    Type: String
+    Default: 10.0.1.0/24
+
+  PrvSubnet1CIDR:
+    Description: Provide the subnet for Private Subnet 1
+    Type: String
+    Default: 10.0.2.0/24
+
+  PrvSubnet2CIDR:
+    Description: Provide the subnet for Private Subnet 2
+    Type: String
+    Default: 10.0.3.0/24
+
+  VpcCIDR:
+    Description: VPC CIDR Selection
+    Type: String
+    Default: 10.0.0.0/16
+
+  WebSrvMinCount:
+    Description: Minimum number of servers
+    Type: String
+    Default: "2"
+
+  WebSrvMaxCount:
+    Description: Maximum number of servers
+    Type: String
+    Default: "4"
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCIDR
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Ref EnvPrefix
+
+  PrvSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      CidrBlock: !Ref PrvSubnet1CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvPrefix} | AZ1 | Private Subnet
+
+  PrvSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      CidrBlock: !Ref PrvSubnet2CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvPrefix} | AZ2 | Private Subnet
+
+  PubSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      CidrBlock: !Ref PubSubnet1CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvPrefix} | AZ1 | Public Subnet
+
+  PubSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      CidrBlock: !Ref PubSubnet2CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvPrefix} | AZ2 | Public Subnet
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  NatGW1EIP:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+
+  NatGW2EIP:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+
+  NatGW1:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGW1EIP.AllocationId
+      SubnetId: !Ref PubSubnet1
+
+  NatGW2:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGW2EIP.AllocationId
+      SubnetId: !Ref PubSubnet2
+
+  PubRouteTbl:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvPrefix} Public Routes
+
+  DefaultPubRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PubRouteTbl
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PubSubnet1RouteTblAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PubRouteTbl
+      SubnetId: !Ref PubSubnet1
+
+  PubSubnet2RouteTblAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PubRouteTbl
+      SubnetId: !Ref PubSubnet2
+
+  PrvRouteTbl:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvPrefix} | AZ1 | Private Routes
+
+  DefaultPrvRoute1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrvRouteTbl
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGW1
+
+  PrvSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrvRouteTbl
+      SubnetId: !Ref PrvSubnet1
+
+  PrvRouteTbl2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvPrefix} | AZ2 | Private Routes
+
+  DefaultPrvRoute2:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrvRouteTbl2
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGW2
+
+  PrvSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrvRouteTbl2
+      SubnetId: !Ref PrvSubnet2
+
+  RoleS3ReadOnly:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${EnvPrefix}-Role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+
+  RolePolicies:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: AmazonS3ReadOnlyAccess
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:Get*
+              - s3:List*
+            Resource:
+              - arn:aws:s3:::udacity-s3-choulis
+              - arn:aws:s3:::udacity-s3-choulis/*
+      Roles:
+        - Ref: RoleS3ReadOnly
+
+  AppRoles:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+        - Ref: RoleS3ReadOnly
+
+  LoadBalancerSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: LB Allow HTTP Traffic
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0
+
+  WebServerSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: LB Allow SSH / HTTP Traffic
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 0
+          ToPort: 65535
+          CidrIp: 0.0.0.0/0
+
+  WebAppTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 10
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 8
+      HealthyThresholdCount: 2
+      Port: 80
+      Protocol: HTTP
+      UnhealthyThresholdCount: 5
+      VpcId: !Ref VPC
+
+  WebAppLaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          apt-get update -y
+          apt-get install apache2 -y
+          systemctl start apache2.service
+          cd /var/www/html
+          echo "Udacity Demo Web Server Up and Running!" > index.html
+      ImageId: ami-0729e439b6769d6ab
+      IamInstanceProfile: !Ref AppRoles
+      SecurityGroups:
+        - Ref: WebServerSecGroup
+      InstanceType: t3.small
+      BlockDeviceMappings:
+        - DeviceName: "/dev/sdk"
+          Ebs:
+            VolumeSize: "10"
+
+  WebAppGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier:
+        - !Ref PrvSubnet1
+        - !Ref PrvSubnet2
+      LaunchConfigurationName:
+        Ref: WebAppLaunchConfig
+      MinSize: !Ref WebSrvMinCount
+      MaxSize: !Ref WebSrvMaxCount
+      TargetGroupARNs:
+        - Ref: WebAppTargetGroup
+
+  WebAppLB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      SecurityGroups:
+        - Ref: LoadBalancerSecGroup
+      Subnets:
+        - !Ref PubSubnet1
+        - !Ref PubSubnet2
+  Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn:
+            Ref: WebAppTargetGroup
+      LoadBalancerArn:
+        Ref: WebAppLB
+      Port: 80
+      Protocol: HTTP
+
+  ALBListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref "WebAppTargetGroup"
+      Conditions:
+        - Field: path-pattern
+          Values: [/]
+      ListenerArn: !Ref "Listener"
+      Priority: 1
+
+Outputs:
+  VPC:
+    Description: VPC Created
+    Value: !Ref VPC
+    Export:
+      Name: !Sub ${EnvPrefix}-VPCID
+
+  PubSubnets:
+    Description: Public Subnet List
+    Value: !Join [",", [!Ref PubSubnet1, !Ref PubSubnet2]]
+    Export:
+      Name: !Sub ${EnvPrefix}-PUB-NETS
+
+  PrvSubnets:
+    Description: Private Subnet List
+    Value: !Join [",", [!Ref PrvSubnet1, !Ref PrvSubnet2]]
+    Export:
+      Name: !Sub ${EnvPrefix}-PRIV-NETS

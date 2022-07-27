@@ -1,0 +1,35 @@
+[
+    {
+        "ParameterKey": "EnvPrefix",
+        "ParameterValue": "Test"
+    },
+    {
+        "ParameterKey": "PubSubnet1CIDR",
+        "ParameterValue": "10.0.0.0/24"
+    },
+    {
+        "ParameterKey": "PubSubnet2CIDR",
+        "ParameterValue": "10.0.1.0/24"
+    },
+        {
+        "ParameterKey": "PrvSubnet1CIDR",
+        "ParameterValue": "10.0.2.0/24"
+    },
+    {
+        "ParameterKey": "PrvSubnet2CIDR",
+        "ParameterValue": "10.0.3.0/24"
+    },
+    {
+        "ParameterKey": "VpcCIDR",
+        "ParameterValue": "10.0.0.0/16"
+    },
+    {
+        "ParameterKey": "WebSrvMinCount",
+        "ParameterValue": "2"
+    },
+    {
+        "ParameterKey": "WebSrvMaxCount",
+        "ParameterValue": "4"
+    }
+]
+
