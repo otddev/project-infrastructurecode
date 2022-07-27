@@ -18,7 +18,7 @@ This project will deploy a a full indrastructure for deployment of web service w
 
 ## Dependencies
 
-### AWS Requirements
+#### AWS Requirements
 1. A AWS account is required for this project.
 2. AWS CLI Installation
 
@@ -27,24 +27,26 @@ This project will deploy a a full indrastructure for deployment of web service w
 - VSCode
 - Atom
 
-### Register AWS CLI
+#### Register AWS CLI
 - Register AWS CLI installation with your AWS Credentials.
 
 ## Getting Started
 
 - You can modify the parameters of the deployment by modifuing the value slisted in "infra_params.json"
-- When ready execute the below command.
-- Go to the directory of the repro and run "npm install" to install package dependencies.
-- ./create.sh myFirstStack network.yml network-parameters.json
-./update.sh mySecStack servers.yml server-parameters.json
 
+- To create a new deployment run the following command:
+  sintax: ```./create.sh <stack name> <template .yml> <parameters .json file>```
+  ex. ```./create.sh udacity infra_config.yml infra_params.json```
+  
+- To update an existing deployment modify the template or parameters as needed and run below command:
+  sintax: ```./upgrade.sh <stack name> <template .yml> <parameters .json file>```
+  ex. ```./upgrade.sh udacity infra_config.yml infra_params.json```
 
 
 ## Working Sample
 Web Address: http://udaci-WebAp-7Q3BMX6B2O8N-76539188.us-east-1.elb.amazonaws.com
 
-
-### Contact
+## Contact
 
 Antonio Garcia
 Mail: mailto:gerardo@onetechdude.com
