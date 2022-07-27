@@ -36,10 +36,12 @@ This project will deploy a a full indrastructure for deployment of web service w
 
 - To create a new deployment run the following command:
   sintax: ```./create.sh <stack name> <template .yml> <parameters .json file>```
+  
   ex. ```./create.sh udacity infra_config.yml infra_params.json```
   
 - To update an existing deployment modify the template or parameters as needed and run below command:
   sintax: ```./upgrade.sh <stack name> <template .yml> <parameters .json file>```
+  
   ex. ```./upgrade.sh udacity infra_config.yml infra_params.json```
 
 
