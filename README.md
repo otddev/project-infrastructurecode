@@ -12,7 +12,7 @@ This project will deploy a a full indrastructure for deployment of web service w
 - Security groups will be created to only allow traffic on port 80.
 
 ## Diagram
-![Diagram](diagram.png)
+![Diagram](design_diagram.png)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
